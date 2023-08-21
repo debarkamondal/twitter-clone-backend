@@ -23,7 +23,6 @@ const queries = {
         const { data } = yield axios_1.default.get(googleOauthURL.toString(), {
             responseType: "json",
         });
-        console.log(data);
         const user = yield db_1.prismaClient.user.findUnique({
             where: { email: data.email },
         });
@@ -44,6 +43,14 @@ const queries = {
             throw new Error("User with this email was not found in database");
         const userToken = jwt_1.JWTService.generateTokenForUser(userInDb);
         return userToken;
+    }),
+    getCurrentUser: (parent, args, context) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
+        if (!((_a = context.user) === null || _a === void 0 ? void 0 : _a.id))
+            return null;
+        return yield db_1.prismaClient.user.findUnique({
+            where: { id: (_b = context.user) === null || _b === void 0 ? void 0 : _b.id },
+        });
     }),
 };
 exports.resolvers = { queries };
