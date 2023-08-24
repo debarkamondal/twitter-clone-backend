@@ -18,4 +18,15 @@ model User{
   profileImgUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tweets Tweet[]
+}
+
+model Tweet{
+  id String @id @default(cuid())
+  content String
+  imgUrl String?
+  author User @relation(fields: [authorId], references: [id])
+  authorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
