@@ -1,4 +1,7 @@
 import { initServer } from "./app/index";
+import * as dotenv from "dotenv";
+
+const env = dotenv.config();
 
 const init = async () => {
 	const app = await initServer();
