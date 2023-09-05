@@ -1,21 +1,16 @@
 import { Tweet } from "@prisma/client";
-import { prismaClient } from "../../clients/db";
 import { GraphQLContext } from "../../interfaces";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { UserService } from "../services/user";
+import { CreateTweetData, TweetService } from "../services/tweet";
 
 const s3Client = new S3Client({
 	region: process.env.AWS_DEFAULT_REGION,
 });
 
-interface CreateTweetData {
-	content: string;
-	imgUrl?: string;
-}
-
 const queries = {
-	getAllTweets: () =>
-		prismaClient.tweet.findMany({ orderBy: { createdAt: "desc" } }),
+	getAllTweets: async () => await TweetService.getAllTweets(),
 
 	getTweetImgPresignedUrl: async (
 		parent: any,
@@ -33,7 +28,7 @@ const queries = {
 		if (!allowedImgTypes.includes(ImgType))
 			throw new Error("Image type not supported");
 		const putObjectCommand = new PutObjectCommand({
-			Bucket: "dezire-twitter-clone-dev",
+			Bucket: process.env.AWS_S3_BUCKET,
 			Key: `uploads/${ctx.user.id}/${
 				ImgName.split(".")[0]
 			}-${Date.now().toString()}.${ImgType.split("/")[1]}`,
@@ -53,12 +48,9 @@ const mutations = {
 		ctx: GraphQLContext
 	) => {
 		if (!ctx.user?.id) throw new Error("Unauthorized action");
-		const tweet = await prismaClient.tweet.create({
-			data: {
-				content: payload.content,
-				imgUrl: payload.imgUrl,
-				author: { connect: { id: ctx.user?.id } },
-			},
+		const tweet = await TweetService.createTweet({
+			...payload,
+			userId: ctx.user.id,
 		});
 		return tweet;
 	},
@@ -66,8 +58,8 @@ const mutations = {
 
 const extraResolvers = {
 	Tweet: {
-		author: (parent: Tweet) =>
-			prismaClient.user.findUnique({ where: { id: parent.authorId } }),
+		author: async (parent: Tweet) =>
+			await UserService.getUserById(parent.authorId),
 	},
 };
 
