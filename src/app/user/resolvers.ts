@@ -3,6 +3,7 @@ import { User } from "@prisma/client";
 import { UserService } from "../services/user";
 import { TweetService } from "../services/tweet";
 import { prismaClient } from "../../clients/db";
+import { redisClient } from "../../clients/redis";
 
 const queries = {
 	verifyGoogleToken: async (parent: any, { token }: { token: string }) => {
@@ -18,7 +19,12 @@ const queries = {
 		parent: any,
 		{ id }: { id: string },
 		context: GraphQLContext
-	) => await UserService.getUserById(id),
+	) => {
+		const cachedValue = await redisClient.get(`USER-${id}`);
+		if (cachedValue) return JSON.parse(cachedValue);
+		const user = await UserService.getUserById(id);
+		await redisClient.set(`USER-${id}`, JSON.stringify(user));
+	},
 };
 
 const mutations = {

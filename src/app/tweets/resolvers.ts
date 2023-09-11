@@ -4,13 +4,20 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { UserService } from "../services/user";
 import { CreateTweetData, TweetService } from "../services/tweet";
+import { redisClient } from "../../clients/redis";
 
 const s3Client = new S3Client({
 	region: process.env.AWS_DEFAULT_REGION,
 });
 
 const queries = {
-	getAllTweets: async () => await TweetService.getAllTweets(),
+	getAllTweets: async () => {
+		const cachetTweets = await redisClient.get("ALL_TWEETS");
+		if (cachetTweets) return JSON.parse(cachetTweets);
+		const tweets = await TweetService.getAllTweets();
+		await redisClient.set("ALL_TWEETS", JSON.stringify(tweets));
+		return tweets;
+	},
 
 	getTweetImgPresignedUrl: async (
 		parent: any,
@@ -52,6 +59,8 @@ const mutations = {
 			...payload,
 			userId: ctx.user.id,
 		});
+		await redisClient.del(`USER-${ctx.user.id}`);
+		await redisClient.del(`ALL_TWEETS`);
 		return tweet;
 	},
 };
