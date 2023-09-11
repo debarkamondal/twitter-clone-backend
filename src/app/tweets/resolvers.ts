@@ -15,7 +15,6 @@ const queries = {
 		const cachetTweets = await redisClient.get("ALL_TWEETS");
 		if (cachetTweets) return JSON.parse(cachetTweets);
 		const tweets = await TweetService.getAllTweets();
-		await redisClient.set("ALL_TWEETS", JSON.stringify(tweets));
 		return tweets;
 	},
 
@@ -59,8 +58,7 @@ const mutations = {
 			...payload,
 			userId: ctx.user.id,
 		});
-		await redisClient.del(`USER-${ctx.user.id}`);
-		await redisClient.del(`ALL_TWEETS`);
+
 		return tweet;
 	},
 };

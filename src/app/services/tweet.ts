@@ -1,4 +1,5 @@
 import { prismaClient } from "../../clients/db";
+import { redisClient } from "../../clients/redis";
 
 export interface CreateTweetData {
 	content: string;
@@ -6,17 +7,29 @@ export interface CreateTweetData {
 	userId: string;
 }
 export class TweetService {
-	public static createTweet(data: CreateTweetData) {
-		return prismaClient.tweet.create({
+	public static async createTweet(data: CreateTweetData) {
+		const isRateLimited = await redisClient.get(
+			`RATE_LIMIT:TWEET:${data.userId}`
+		);
+		if (isRateLimited) throw new Error("Please wait, don't spam");
+		const tweet = prismaClient.tweet.create({
 			data: {
 				content: data.content,
 				imgUrl: data.imgUrl,
 				author: { connect: { id: data.userId } },
 			},
 		});
+		await redisClient.setex(`RATE_LIMIT:TWEET:${data.userId}`, 5, 1);
+		await redisClient.del(`USER-${data.userId}`);
+		await redisClient.del(`ALL_TWEETS`);
+		return tweet;
 	}
-	public static getAllTweets() {
-		return prismaClient.tweet.findMany({ orderBy: { createdAt: "desc" } });
+	public static async getAllTweets() {
+		const tweets = prismaClient.tweet.findMany({
+			orderBy: { createdAt: "desc" },
+		});
+		await redisClient.set("ALL_TWEETS", JSON.stringify(tweets));
+		return tweets;
 	}
 	public static allTweetsByUser(id: string) {
 		return prismaClient.tweet.findMany({ where: { author: { id } } });
