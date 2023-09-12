@@ -12,7 +12,7 @@ export class TweetService {
 			`RATE_LIMIT:TWEET:${data.userId}`
 		);
 		if (isRateLimited) throw new Error("Please wait, don't spam");
-		const tweet = prismaClient.tweet.create({
+		const tweet = await prismaClient.tweet.create({
 			data: {
 				content: data.content,
 				imgUrl: data.imgUrl,
