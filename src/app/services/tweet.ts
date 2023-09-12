@@ -30,7 +30,6 @@ export class TweetService {
 		const tweets = await prismaClient.tweet.findMany({
 			orderBy: { createdAt: "desc" },
 		});
-		console.log(tweets);
 		await redisClient.set("ALL_TWEETS", JSON.stringify(tweets));
 		return tweets;
 	}
