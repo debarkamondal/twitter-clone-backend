@@ -13,6 +13,9 @@ export const initServer = async () => {
 	const app = express();
 	app.use(cors());
 	app.use(bodyParser.json());
+
+	//For health cheaking with AWS.
+	app.get("/", (_, res) => res.status(200).json({ message: "health OK" }));
 	const graphqlServer = new ApolloServer<GraphQLContext>({
 		typeDefs: `
 			${User.types}
