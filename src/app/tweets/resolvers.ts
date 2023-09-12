@@ -4,7 +4,6 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { UserService } from "../services/user";
 import { CreateTweetData, TweetService } from "../services/tweet";
-import { redisClient } from "../../clients/redis";
 
 const s3Client = new S3Client({
 	region: process.env.AWS_DEFAULT_REGION,
@@ -12,8 +11,6 @@ const s3Client = new S3Client({
 
 const queries = {
 	getAllTweets: async () => {
-		const cachetTweets = await redisClient.get("ALL_TWEETS");
-		if (cachetTweets) return JSON.parse(cachetTweets);
 		const tweets = await TweetService.getAllTweets();
 		return tweets;
 	},
