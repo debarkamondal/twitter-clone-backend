@@ -5,6 +5,11 @@ export const types = `#graphql
         imgUrl: String
     }
 
+    input likeTweetData{
+        # likerId: String!
+        tweetId: String!
+    }
+
     type Tweet{
         id: ID!
         content: String!

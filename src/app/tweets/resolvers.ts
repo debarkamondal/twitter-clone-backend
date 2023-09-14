@@ -4,6 +4,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { UserService } from "../services/user";
 import { CreateTweetData, TweetService } from "../services/tweet";
+import { likeService } from "../services/like";
 
 const s3Client = new S3Client({
 	region: process.env.AWS_DEFAULT_REGION,
@@ -58,12 +59,38 @@ const mutations = {
 
 		return tweet;
 	},
+	likeTweet: async (
+		parent: Tweet,
+		{ payload: { tweetId } }: { payload: { tweetId: string } },
+		ctx: GraphQLContext
+	) => {
+		if (!ctx.user?.id) throw new Error("Unauthorized action");
+		const tweet = await likeService.likeTweet({
+			tweetId: tweetId,
+			likerId: ctx.user.id,
+		});
+		return tweet;
+	},
+	unlikeTweet: async (
+		parent: Tweet,
+		{ payload: { tweetId } }: { payload: { tweetId: string } },
+		ctx: GraphQLContext
+	) => {
+		if (!ctx.user?.id) throw new Error("Unauthorized action");
+		const tweet = await likeService.unlikeTweet({
+			tweetId: tweetId,
+			likerId: ctx.user.id,
+		});
+		return tweet;
+	},
 };
 
 const extraResolvers = {
 	Tweet: {
 		author: async (parent: Tweet) =>
 			await UserService.getUserById(parent.authorId),
+		likes: async (parent: Tweet) =>
+			await likeService.getLikesOfTweet(parent.id),
 	},
 };
 
