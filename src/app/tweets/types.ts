@@ -5,8 +5,7 @@ export const types = `#graphql
         imgUrl: String
     }
 
-    input likeTweetData{
-        # likerId: String!
+    input LikeUnlikeTweetData{
         tweetId: String!
     }
 
